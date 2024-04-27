@@ -4,8 +4,13 @@ const moment = require('moment');
 const app = express();
 const port = process.env.PORT || 5000;
 const mongoose = require("mongoose");
-const { Program } = require('./model');
+const { Program } = require('./app/model/processModel');
 app.use(express.json());
+
+const getAllProcess = require('./app/routes/processRoutes');
+const processPostRoute = require('./app/routes/processPostRoute');
+const getSingleProcess = require('./app/routes/getSignleProcess');
+const deleteProcess = require('./app/routes/deleteProcess');
 
 const connectDB = async () => {
     await mongoose.connect(`mongodb+srv://rafsunjani:hRX8BezxQgaLg8yO@rafsunprojects.inxkimj.mongodb.net/`)
@@ -14,10 +19,13 @@ const connectDB = async () => {
 
 connectDB()
 
+
+
   // Define a function to continuously update Creation_time field for each post
   async function updateCreatedAtField() {
     try {
         const posts = await Program.find();
+        // console.log('posts--', posts)
         await Promise.all(posts.map(async post => {
             post.Creation_time.push(moment().format('hh:mm a DD.MM.YYYY'));
             await post.save();
@@ -33,72 +41,79 @@ setInterval(updateCreatedAtField, 30000);
 async function run() {
     try {
 
-        app.post('/create-process', async (req, res) => {
-            try {
-                const newProgram = new Program({
-                    PID: req.body.PID,
-                    Creation_time: [moment().format('hh:mm a DD.MM.YYYY')],
-                });
-                await newProgram.save();
-        
-                res.status(201).json({
-                    PID: newProgram.PID,
-                    Creation_time: moment(newProgram.Creation_time ).format('hh:mm a DD.MM.YYYY')
-                }); 
-            } catch (err) {
-                console.error('Error creating Process:', err);
-                res.status(500).json({ error: 'Internal Server Error' });
-            }
 
-        })
+        // Routes
+        app.use('/', getAllProcess);
+        app.use('/', processPostRoute);
+        app.use('/', getSingleProcess);
+        app.use('/', deleteProcess);
+
+        // app.post('/create-process', async (req, res) => {
+        //     try {
+        //         const newProgram = new Program({
+        //             PID: req.body.PID,
+        //             Creation_time: [moment().format('hh:mm a DD.MM.YYYY')],
+        //         });
+        //         await newProgram.save();
+        
+        //         res.status(201).json({
+        //             PID: newProgram.PID,
+        //             Creation_time: moment(newProgram.Creation_time ).format('hh:mm a DD.MM.YYYY')
+        //         }); 
+        //     } catch (err) {
+        //         console.error('Error creating Process:', err);
+        //         res.status(500).json({ error: 'Internal Server Error' });
+        //     }
+
+        // })
  
-        app.get('/get-all', async (req, res) => {
+        // app.get('/get-all', async (req, res) => {
 
-            try {
-                const posts = await Program.find();
+        //     try {
+        //         const posts = await Program.find();
 
-                const formatDate = posts.map((post) => ({
-                    PID: post.PID,
-                    Creation_time: post.Creation_time[0]
-                }))
+        //         const formatDate = posts.map((post) => ({
+        //             PID: post.PID,
+        //             Creation_time: post.Creation_time[0]
+        //         }))
             
-                res.json(formatDate); 
-            } catch (err) {
-                console.error('Error fetching Process:', err);
-                res.status(500).json({ error: 'Internal Server Error' });
-            }
-        })
+        //         res.json(formatDate); 
+        //     } catch (err) {
+        //         console.error('Error fetching Process:', err);
+        //         res.status(500).json({ error: 'Internal Server Error' });
+        //     }
+        // })
 
 
-        app.get('/get-single/:id', async (req, res) => {
-            try {
-                const post = await Program.findOne(req.params.PID);
+        // app.get('/get-single/:id', async (req, res) => {
+        //     try {
+        //         const post = await Program.findOne(req.params.PID);
                 
-                if (!post) {
-                    return res.status(404).json({ error: 'Process not found' });
-                }
-                res.json({
-                    Logs: post.Creation_time
-                }); 
-            } catch (err) {
-                console.error('Error fetching Process by PID:', err);
-                res.status(500).json({ error: 'Internal Server Error' });
-            }
-        });
+        //         if (!post) {
+        //             return res.status(404).json({ error: 'Process not found' });
+        //         }
+        //         res.json({
+        //             Logs: post.Creation_time
+        //         }); 
+        //     } catch (err) {
+        //         console.error('Error fetching Process by PID:', err);
+        //         res.status(500).json({ error: 'Internal Server Error' });
+        //     }
+        // });
 
-        app.delete('/delete-process/:id', async (req, res) => {
-            try {
-                const deletedPost = await Program.findOneAndDelete(req.params.PID);
-                if (!deletedPost) {
-                    return res.status(404).json({ error: 'Process not found' });
-                }
+        // app.delete('/delete-process/:id', async (req, res) => {
+        //     try {
+        //         const deletedPost = await Program.findOneAndDelete(req.params.PID);
+        //         if (!deletedPost) {
+        //             return res.status(404).json({ error: 'Process not found' });
+        //         }
         
-                res.json({ message: 'The process has been successfully deleted' });
-            } catch (err) {
-                console.error('Error deleting Process by PID:', err);
-                res.status(500).json({ error: 'Internal Server Error' });
-            }
-        });
+        //         res.json({ message: 'The process has been successfully deleted' });
+        //     } catch (err) {
+        //         console.error('Error deleting Process by PID:', err);
+        //         res.status(500).json({ error: 'Internal Server Error' });
+        //     }
+        // });
 
     }
     finally {
